@@ -9,7 +9,7 @@ services:
       - API_KEY=mine
       - BASIC_USERNAME=mine
       - BASIC_PASSWORD=mine
-    image: conductor:server
+    image: conductor-server:local
     container_name: conductor-server
     build:
       context: ../
