@@ -16,6 +16,9 @@ Header: x-api-key = mine
 run from this main folder
 
 we use gcloud builds:
+
+TAG: shoud be: v{CONDUCTOR-VERSION}.{MINE-PATCH}
+
 this will build and push to: europe-docker.pkg.dev/mine-staticresources/conductor/conductor-server:{TAG}
 
 gcloud builds submit --config mine-ci.yaml --project mine-staticresources --substitutions _TAG={TAG}
