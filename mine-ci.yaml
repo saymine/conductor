@@ -2,11 +2,11 @@ steps:
 
 - name: 'gcr.io/cloud-builders/docker'
   id: 'build'
-  args: ['build', '-t', 'europe-docker.pkg.dev/mine-staticresources/conductor/conductor-server:$_TAG', '-f', 'docker/server/Dockerfile', '.']
+  args: ['build', '-t', 'europe-docker.pkg.dev/mine-artifacts-registry/conductor/conductor-server:$_TAG', '-f', 'docker/server/Dockerfile', '.']
 
 - name: 'gcr.io/cloud-builders/docker'
   id: 'push'
-  args: ['push', 'europe-docker.pkg.dev/mine-staticresources/conductor/conductor-server:$_TAG' ]
+  args: ['push', 'europe-docker.pkg.dev/mine-artifacts-registry/conductor/conductor-server:$_TAG' ]
 
 options:
   machineType: 'N1_HIGHCPU_32'
