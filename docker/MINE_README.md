@@ -36,6 +36,10 @@ git rebase upstream/main
 
 git push origin HEAD
 
+git fetch upstream --tags
+
+git push origin --tags
+
 # how to move to new tag
 
 git checkout {TAG}
