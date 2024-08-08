@@ -2,11 +2,14 @@
 # How to run localy 
 
 docker-compose -f docker-compose-mine.yaml up
+docker-compose -f docker-compose-mine.yaml up --build
 
 for site:
 http://localhost:7030
 user - mine
 pass - mine
+
+swagger: http://localhost:7030/swagger-ui/index.html#/
 
 for api with api key
 http://localhost:7030/api-with-key
