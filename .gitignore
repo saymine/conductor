@@ -4,6 +4,7 @@
 dump.rdb
 out
 bin
+!docker/server/bin
 target
 buildscan.log
 /docs/site
