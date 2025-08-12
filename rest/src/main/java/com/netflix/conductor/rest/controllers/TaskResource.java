@@ -12,6 +12,7 @@
  */
 package com.netflix.conductor.rest.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -181,6 +182,23 @@ public class TaskResource {
             @RequestParam(value = "executionNamespace", required = false)
                     String executionNamespace) {
         return taskService.getTaskQueueSize(taskType, domain, executionNamespace, isolationGroupId);
+    }
+
+    @GetMapping("/mine/queue/size")
+    @Operation(summary = "Get queue size for a task type. Written by Mine. for keda support")
+    public Map<String, Integer> mineTaskDepth(
+            @RequestParam("taskType") String taskType,
+            @RequestParam(value = "domain", required = false) String domain,
+            @RequestParam(value = "isolationGroupId", required = false) String isolationGroupId,
+            @RequestParam(value = "executionNamespace", required = false)
+                    String executionNamespace) {
+        Integer size =
+                taskService.getTaskQueueSize(
+                        taskType, domain, executionNamespace, isolationGroupId);
+
+        Map<String, Integer> result = new HashMap<>(1);
+        result.put("size", size);
+        return result;
     }
 
     @GetMapping("/queue/all/verbose")
