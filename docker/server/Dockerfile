@@ -30,7 +30,6 @@ RUN if [ "$PREBUILT" = "true" ]; then \
         --no-daemon --no-parallel; \
     fi
 
-
 # ===========================================================================================================
 # 1. UI builder stage
 # ===========================================================================================================
@@ -54,33 +53,27 @@ RUN if [ "$PREBUILT" = "false" ]; then \
 # ===========================================================================================================
 # 2. Final stage
 # ===========================================================================================================
-FROM debian:stable-slim
+FROM alpine:3.20
 
 LABEL maintainer="Orkes OSS <oss@orkes.io>"
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends openjdk-21-jre-headless nginx curl ca-certificates \
-    && rm -f /etc/nginx/sites-enabled/default \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add openjdk21
+RUN apk add nginx
+RUN apk add envsubst
+RUN apk add apache2-utils
+RUN apk add curl
 
 # Make app folders
 RUN mkdir -p /app/config /app/logs /app/libs
 
 # Copy the compiled output to new image
-COPY docker/server/bin /app
-COPY docker/server/config /app/config
+
 COPY --from=builder /conductor/server/build/libs/*boot*.jar /app/libs/conductor-server.jar
 
 # Copy compiled UI assets to nginx www directory
 WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY --from=ui-builder /conductor/ui-next/dist .
-COPY docker/server/nginx/nginx.conf  /etc/nginx/conf.d/default.conf
 
-# Copy the files for the server into the app folders
-RUN chmod +x /app/startup.sh
-
-HEALTHCHECK --interval=60s --timeout=30s --retries=10 CMD curl -I -XGET http://localhost:8080/health || exit 1
-
-CMD [ "/app/startup.sh" ]
+CMD [ "/app/startup/startup.sh" ]
 ENTRYPOINT [ "/bin/sh"]

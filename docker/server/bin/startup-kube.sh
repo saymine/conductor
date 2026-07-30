@@ -28,19 +28,18 @@ nginx
 # Start the server
 cd /app/libs
 
-echo "Property file: $CONFIG_PROP"
-echo $CONFIG_PROP
-export config_file=
+export config_file=/app/config/config.properties
+cat $config_file 
 
-if [ -z "$CONFIG_PROP" ];
-  then
-    echo "Using default configuration file";
-    export config_file=/app/config/config.properties
-  else
-    echo "Using '$CONFIG_PROP'";
-    export config_file=/app/config/$CONFIG_PROP
-fi
+echo "Using default configuration file: $config_file";
+
+#Append env vars to config file
+
+echo "" >> $config_file
+echo "" >> $config_file
+
+NV | grep '^CPROP_' | cut -c 7- | sed 's/\_/./g' >> $config_file
 
 echo "Using java options config: $JAVA_OPTS"
 
-java ${JAVA_OPTS} -jar -DCONDUCTOR_CONFIG_FILE=$config_file conductor-server.jar 2>&1 | tee -a /app/logs/server.log
+java ${JAVA_OPTS} -jar -DCONDUCTOR_CONFIG_FILE=$config_file conductor-server.jar

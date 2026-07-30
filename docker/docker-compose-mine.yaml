@@ -1,0 +1,85 @@
+version: '2.3'
+
+services:
+  conductor-server:
+    command:
+      - "/app/startup/startup.sh"
+    environment:
+      - CONFIG_PROP=config-mine.properties
+      - API_KEY=mine
+      - BASIC_USERNAME=mine
+      - BASIC_PASSWORD=mine
+    image: conductor-server:local
+    container_name: conductor-server
+    build:
+      context: ../
+      dockerfile: docker/server/Dockerfile
+    volumes:
+      - ./server/bin/:/app/startup
+      - ./server/config/:/app/config
+      - ./server/nginx/:/app/nginx
+    networks:
+      - internal
+    ports:
+      - 7030:80
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl","-I" ,"-XGET", "http://localhost:7030/health"]
+      interval: 60s
+      timeout: 30s
+      retries: 12
+    links:
+      - conductor-postgres:postgresdb
+      - conductor-redis:rs
+    depends_on:
+      conductor-postgres:
+        condition: service_healthy
+      conductor-redis:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1k"
+        max-file: "3"
+
+  conductor-redis:
+    image: redis:6.2.3-alpine
+    volumes:
+      - ../server/config/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - internal
+    ports:
+      - 7379:6379
+    healthcheck:
+      test: [ "CMD", "redis-cli","ping" ]
+
+  conductor-postgres:
+    image: postgres
+    environment:
+      - POSTGRES_USER=conductor
+      - POSTGRES_PASSWORD=conductor
+    volumes:
+      - pgdata-conductor:/var/lib/postgresql/data
+    networks:
+      - internal
+    ports:
+      - 6432:5432
+    healthcheck:
+      test: timeout 5 bash -c 'cat < /dev/null > /dev/tcp/localhost/5432'
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1k"
+        max-file: "3"
+
+volumes:
+  pgdata-conductor:
+    driver: local
+  mine:
+    driver: local
+
+networks:
+  internal:

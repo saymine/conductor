@@ -1,9 +1,17 @@
+map $http_x_api_key $valid_key {
+  default 0;
+  "${API_KEY}" 1;
+}
+
 server {
-  listen 5000;
+  listen 80;
   server_name conductor;
   server_tokens off;
 
   location / {
+    auth_basic             "Restricted";
+    auth_basic_user_file   .htpasswd;
+
     add_header Referrer-Policy "strict-origin";
     add_header X-Frame-Options "SAMEORIGIN";
     add_header X-Content-Type-Options "nosniff";
@@ -15,11 +23,51 @@ server {
     try_files $uri /index.html;
   }
 
+  location /api/tasks/mine/queue/size {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-NginX-Proxy true;
+    proxy_pass http://localhost:8080/api/tasks/mine/queue/size;
+    proxy_ssl_session_reuse off;
+    proxy_set_header Host $http_host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_redirect off;
+  }
+
   location /api {
+    auth_basic             "Restricted";
+    auth_basic_user_file   .htpasswd;
+
     proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-NginX-Proxy true;
     proxy_pass http://localhost:8080/api;
+    proxy_ssl_session_reuse off;
+    proxy_set_header Host $http_host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_redirect off;
+  }
+
+  location /api-with-key {
+    if ($valid_key = 0) {
+      return 401; # Unauthorized
+    }
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-NginX-Proxy true;
+    proxy_pass http://localhost:8080/api;
+    proxy_ssl_session_reuse off;
+    proxy_set_header Host $http_host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_redirect off;
+  }
+
+  location /health {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-NginX-Proxy true;
+    proxy_pass http://localhost:8080/health;
     proxy_ssl_session_reuse off;
     proxy_set_header Host $http_host;
     proxy_cache_bypass $http_upgrade;
@@ -42,6 +90,17 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-NginX-Proxy true;
     proxy_pass http://localhost:8080/swagger-ui;
+    proxy_ssl_session_reuse off;
+    proxy_set_header Host $http_host;
+    proxy_cache_bypass $http_upgrade;
+    proxy_redirect off;
+  }
+
+  location /metrics {
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-NginX-Proxy true;
+    proxy_pass http://localhost:8080/actuator/prometheus;
     proxy_ssl_session_reuse off;
     proxy_set_header Host $http_host;
     proxy_cache_bypass $http_upgrade;
