@@ -51,6 +51,13 @@ public class ConductorProperties {
     @DurationUnit(ChronoUnit.SECONDS)
     private Duration maxPostponeDurationSeconds = Duration.ofSeconds(3600);
 
+    /**
+     * If set to true, a workflow blocked on an IN_PROGRESS HUMAN task is removed from the decider
+     * queue instead of being repeatedly re-swept. It is re-queued automatically when the HUMAN task
+     * is updated to a terminal status (see WorkflowExecutorOps#updateTask).
+     */
+    private boolean humanTaskPreventsDeciderQueue = true;
+
     /** The number of threads to use to do background sweep on active workflows. */
     private int sweeperThreadCount = Runtime.getRuntime().availableProcessors() * 2;
 
@@ -67,7 +74,7 @@ public class ConductorProperties {
     private boolean eventExecutionIndexingEnabled = true;
 
     /** Used to enable/disable the workflow execution lock. */
-    private boolean workflowExecutionLockEnabled = false;
+    private boolean workflowExecutionLockEnabled = true;
 
     /** The time (in milliseconds) for which the lock is leased for. */
     private Duration lockLeaseTime = Duration.ofMillis(60000);
@@ -284,6 +291,14 @@ public class ConductorProperties {
 
     public void setMaxPostponeDurationSeconds(Duration maxPostponeDurationSeconds) {
         this.maxPostponeDurationSeconds = maxPostponeDurationSeconds;
+    }
+
+    public boolean isHumanTaskPreventsDeciderQueue() {
+        return humanTaskPreventsDeciderQueue;
+    }
+
+    public void setHumanTaskPreventsDeciderQueue(boolean humanTaskPreventsDeciderQueue) {
+        this.humanTaskPreventsDeciderQueue = humanTaskPreventsDeciderQueue;
     }
 
     public int getSweeperThreadCount() {

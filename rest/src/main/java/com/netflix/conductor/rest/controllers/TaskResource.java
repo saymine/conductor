@@ -12,6 +12,7 @@
  */
 package com.netflix.conductor.rest.controllers;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -78,11 +79,9 @@ public class TaskResource {
             @RequestParam(value = "domain", required = false) String domain,
             @RequestParam(value = "count", defaultValue = "1") int count,
             @RequestParam(value = "timeout", defaultValue = "100") int timeout) {
-        // for backwards compatibility with 2.x client which expects a 204 when no Task is found
-        return Optional.ofNullable(
-                        taskService.batchPoll(taskType, workerId, domain, count, timeout))
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+        List<Task> tasks = taskService.batchPoll(taskType, workerId, domain, count, timeout);
+        // Return empty list instead of 204 to avoid NPE in client libraries
+        return ResponseEntity.ok(tasks != null ? tasks : List.of());
     }
 
     @PostMapping(produces = TEXT_PLAIN_VALUE)
@@ -151,8 +150,11 @@ public class TaskResource {
 
     @GetMapping("/{taskId}/log")
     @Operation(summary = "Get Task Execution Logs")
-    public List<TaskExecLog> getTaskLogs(@PathVariable("taskId") String taskId) {
-        return taskService.getTaskLogs(taskId);
+    public ResponseEntity<List<TaskExecLog>> getTaskLogs(@PathVariable("taskId") String taskId) {
+        return Optional.ofNullable(taskService.getTaskLogs(taskId))
+                .filter(logs -> !logs.isEmpty())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
     }
 
     @GetMapping("/{taskId}")
@@ -161,7 +163,7 @@ public class TaskResource {
         // for backwards compatibility with 2.x client which expects a 204 when no Task is found
         return Optional.ofNullable(taskService.getTask(taskId))
                 .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
+                .orElseThrow(() -> new NotFoundException("Task not found for taskId: %s", taskId));
     }
 
     @GetMapping("/queue/sizes")
@@ -181,6 +183,23 @@ public class TaskResource {
             @RequestParam(value = "executionNamespace", required = false)
                     String executionNamespace) {
         return taskService.getTaskQueueSize(taskType, domain, executionNamespace, isolationGroupId);
+    }
+
+    @GetMapping("/mine/queue/size")
+    @Operation(summary = "Get queue size for a task type. Written by Mine. for keda support")
+    public Map<String, Integer> mineTaskDepth(
+            @RequestParam("taskType") String taskType,
+            @RequestParam(value = "domain", required = false) String domain,
+            @RequestParam(value = "isolationGroupId", required = false) String isolationGroupId,
+            @RequestParam(value = "executionNamespace", required = false)
+                    String executionNamespace) {
+        Integer size =
+                taskService.getTaskQueueSize(
+                        taskType, domain, executionNamespace, isolationGroupId);
+
+        Map<String, Integer> result = new HashMap<>(1);
+        result.put("size", size);
+        return result;
     }
 
     @GetMapping("/queue/all/verbose")

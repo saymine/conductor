@@ -17,11 +17,17 @@
 echo "Starting Conductor server"
 
 echo "Running Nginx in background"
+
+htpasswd -c -b /etc/nginx/.htpasswd $BASIC_USERNAME $BASIC_PASSWORD
+
+envsubst '${API_KEY}' < /app/nginx/nginx.template > /etc/nginx/http.d/default.conf
+
 # Start nginx as daemon
 nginx
 
 # Start the server
 cd /app/libs
+
 echo "Property file: $CONFIG_PROP"
 echo $CONFIG_PROP
 export config_file=
