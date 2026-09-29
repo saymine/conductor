@@ -53,21 +53,19 @@ RUN if [ "$PREBUILT" = "false" ]; then \
 # ===========================================================================================================
 # 2. Final stage
 # ===========================================================================================================
-FROM alpine:3.20
+FROM alpine:3.24.2
 
 LABEL maintainer="Orkes OSS <oss@orkes.io>"
 
-RUN apk add openjdk21
-RUN apk add nginx
-RUN apk add envsubst
-RUN apk add apache2-utils
-RUN apk add curl
-
-# Make app folders
-RUN mkdir -p /app/config /app/logs /app/libs
+RUN apk add \
+  openjdk21 \
+  nginx \
+  envsubst \
+  apache2-utils \
+  curl \
+  && mkdir -p /app/config /app/logs /app/libs
 
 # Copy the compiled output to new image
-
 COPY --from=builder /conductor/server/build/libs/*boot*.jar /app/libs/conductor-server.jar
 
 # Copy compiled UI assets to nginx www directory
