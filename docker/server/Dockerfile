@@ -9,7 +9,7 @@
 # ===========================================================================================================
 # 0. Builder stage
 # ===========================================================================================================
-FROM azul/zulu-openjdk-debian:21 AS builder
+FROM azul-zulu:21.54-21.0.13.1-jdk-debian13 AS builder
 
 ARG PREBUILT=false
 ARG INDEXING_BACKEND=elasticsearch
@@ -43,6 +43,7 @@ COPY ui-next /conductor/ui-next
 WORKDIR /conductor/ui-next
 
 RUN if [ "$PREBUILT" = "false" ]; then \
+      npm install -g corepack@latest &&\
       corepack enable && \
       pnpm install && \
       NODE_OPTIONS=--max-old-space-size=4096 pnpm build; \
@@ -53,7 +54,7 @@ RUN if [ "$PREBUILT" = "false" ]; then \
 # ===========================================================================================================
 # 2. Final stage
 # ===========================================================================================================
-FROM alpine:3.24.2
+FROM alpine:3.24.4
 
 LABEL maintainer="Orkes OSS <oss@orkes.io>"
 
