@@ -32,7 +32,7 @@ const timeTextStyle = {
 const CustomisedTooltip = styled(({ className, ...props }: TooltipProps) => (
   <Tooltip
     arrow
-    placement="bottom-start"
+    placement="bottom"
     disableFocusListener
     disableHoverListener
     disableTouchListener
@@ -85,6 +85,7 @@ export interface DateControlComponentProps {
   startDialogHelpText?: string | null;
   endDialogTitle?: string | null;
   endDialogHelpText?: string | null;
+  menuPlacement?: TooltipProps["placement"];
 }
 
 export const DateControlComponent = ({
@@ -111,6 +112,7 @@ export const DateControlComponent = ({
   startDialogHelpText = null,
   endDialogTitle = null,
   endDialogHelpText = null,
+  menuPlacement = "bottom",
 }: DateControlComponentProps) => {
   const handleCommonStartDate = (time: string) => {
     const { rangeStart, rangeEnd } = commonlyUsedDateTime(time);
@@ -130,149 +132,57 @@ export const DateControlComponent = ({
     FEATURES.SHOW_END_TIME_IN_DATEPICKER,
   );
 
+  const toggleStartPicker = () => {
+    setStartOpenDatePicker(!openStartDatePicker);
+    setOpenDateSelect(false);
+    setEndOpenDatePicker(false);
+  };
+
+  const toggleEndPicker = () => {
+    setEndOpenDatePicker(!openEndDatePicker);
+    setOpenDateSelect(false);
+    setStartOpenDatePicker(false);
+  };
+
   return (
     <Box
       sx={{
         display: "flex",
         height: "100%",
-        alignItems: "start",
+        alignItems: "center",
         justifyContent: "start",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <Box>
-          <CustomisedTooltip
-            open={openStartDatePicker}
-            slotProps={{
-              popper: {
-                modifiers: [
-                  {
-                    name: "offset",
-                    options: {
-                      offset: [-90, 10],
-                    },
-                  },
-                ],
-                style: {
-                  zIndex: 1200,
-                },
-              },
-            }}
+      <Box sx={{ display: "flex", alignItems: "center", height: 42 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          <Box
+            id="date-picker-start-time"
             sx={{
-              "& .MuiTooltip-tooltip": {
-                minWidth: "500px",
-              },
+              display: "flex",
+              alignItems: "center",
             }}
-            title={
-              <Box>
-                {startDialogTitle && startDialogHelpText ? (
-                  <Box
-                    sx={{
-                      marginLeft: 2,
-                      marginRight: 2,
-                      paddingTop: 2,
-                      paddingBottom: 2,
-                      marginBottom: 2,
-                    }}
-                  >
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        paddingBottom: 1,
-                        fontSize: "11pt",
-                      }}
-                    >
-                      {startDialogTitle}
-                    </Typography>
-                    <Typography>{startDialogHelpText}</Typography>
-                  </Box>
-                ) : null}
-
-                <DatePickerComponent
-                  startDateTime={startTime}
-                  endDateTime={startTimeEnd}
-                  label="Start"
-                  handleFrom={onStartFromChange}
-                  handleTo={onStartToChange}
-                  openPicker={setStartOpenDatePicker}
-                  setDisplayName={setFromDisplayTime}
-                  maxDate={true}
-                  handleCommonDate={handleCommonStartDate}
-                />
-              </Box>
-            }
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-              }}
+            <MuiTypography
+              onClick={toggleStartPicker}
+              sx={{ ...textStyle, cursor: "pointer" }}
             >
-              <Box
-                id="date-picker-start-time"
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                }}
-                onClick={() => {
-                  setStartOpenDatePicker(!openStartDatePicker);
-                  setOpenDateSelect(false);
-                  setEndOpenDatePicker(false);
-                }}
-              >
-                <MuiTypography sx={{ ...textStyle, cursor: "pointer" }}>
-                  {startTimeLabel}:
-                </MuiTypography>
-                <MuiTypography
-                  sx={{
-                    ...timeTextStyle,
-                    background: openStartDatePicker ? "#E3F2FD" : "none",
-                  }}
-                >
-                  {fromDisplayTime}
-                </MuiTypography>
-              </Box>
-              {startTime || startTimeEnd ? (
-                <IconButton
-                  size="small"
-                  color="primary"
-                  disableRipple
-                  sx={{
-                    padding: 0,
-                    height: "fit-content",
-                    minHeight: 0,
-                  }}
-                  onClick={() => {
-                    onStartFromChange("");
-                    onStartToChange("");
-                    setFromDisplayTime("Select time range");
-                  }}
-                >
-                  <CloseOutlinedIcon
-                    color="primary"
-                    sx={{
-                      fontSize: "12pt",
-                    }}
-                  />
-                </IconButton>
-              ) : null}
-            </Box>
-          </CustomisedTooltip>
-          {showEndDatePicker ? (
+              {startTimeLabel}:
+            </MuiTypography>
             <CustomisedTooltip
-              open={openEndDatePicker}
+              placement={menuPlacement}
+              open={openStartDatePicker}
               slotProps={{
                 popper: {
                   modifiers: [
                     {
                       name: "offset",
                       options: {
-                        offset: [-90, 10],
+                        offset: [0, 8],
                       },
                     },
                   ],
@@ -288,7 +198,7 @@ export const DateControlComponent = ({
               }}
               title={
                 <Box>
-                  {endDialogTitle && endDialogHelpText ? (
+                  {startDialogTitle && startDialogHelpText ? (
                     <Box
                       sx={{
                         marginLeft: 2,
@@ -305,45 +215,152 @@ export const DateControlComponent = ({
                           fontSize: "11pt",
                         }}
                       >
-                        {endDialogTitle}
+                        {startDialogTitle}
                       </Typography>
-                      <Typography>{endDialogHelpText}</Typography>
+                      <Typography>{startDialogHelpText}</Typography>
                     </Box>
                   ) : null}
+
                   <DatePickerComponent
-                    startDateTime={endTimeStart}
-                    endDateTime={endTime}
-                    label="End"
-                    handleFrom={onEndFromChange}
-                    handleTo={onEndToChange}
-                    openPicker={setEndOpenDatePicker}
-                    setDisplayName={setToDisplayTime}
-                    maxDate={false}
-                    handleCommonDate={handleCommonEndDate}
+                    startDateTime={startTime}
+                    endDateTime={startTimeEnd}
+                    label="Start"
+                    handleFrom={onStartFromChange}
+                    handleTo={onStartToChange}
+                    openPicker={setStartOpenDatePicker}
+                    setDisplayName={setFromDisplayTime}
+                    maxDate={true}
+                    handleCommonDate={handleCommonStartDate}
                   />
                 </Box>
               }
             >
               <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                }}
+                component="span"
+                onClick={toggleStartPicker}
+                sx={{ display: "inline-flex" }}
               >
-                <Box
+                <MuiTypography
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
-                  }}
-                  onClick={() => {
-                    setEndOpenDatePicker(!openEndDatePicker);
-                    setOpenDateSelect(false);
-                    setStartOpenDatePicker(false);
+                    ...timeTextStyle,
+                    background: openStartDatePicker ? "#E3F2FD" : "none",
                   }}
                 >
-                  <MuiTypography sx={{ ...textStyle, cursor: "pointer" }}>
-                    {endTimeLabel}:
-                  </MuiTypography>
+                  {fromDisplayTime}
+                </MuiTypography>
+              </Box>
+            </CustomisedTooltip>
+          </Box>
+          {startTime || startTimeEnd ? (
+            <IconButton
+              size="small"
+              color="primary"
+              disableRipple
+              sx={{
+                padding: 0,
+                height: "fit-content",
+                minHeight: 0,
+              }}
+              onClick={() => {
+                onStartFromChange("");
+                onStartToChange("");
+                setFromDisplayTime("Select time range");
+              }}
+            >
+              <CloseOutlinedIcon
+                color="primary"
+                sx={{
+                  fontSize: "12pt",
+                }}
+              />
+            </IconButton>
+          ) : null}
+        </Box>
+        {showEndDatePicker ? (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
+              <MuiTypography
+                onClick={toggleEndPicker}
+                sx={{ ...textStyle, cursor: "pointer" }}
+              >
+                {endTimeLabel}:
+              </MuiTypography>
+              <CustomisedTooltip
+                placement={menuPlacement}
+                open={openEndDatePicker}
+                slotProps={{
+                  popper: {
+                    modifiers: [
+                      {
+                        name: "offset",
+                        options: {
+                          offset: [0, 8],
+                        },
+                      },
+                    ],
+                    style: {
+                      zIndex: 1200,
+                    },
+                  },
+                }}
+                sx={{
+                  "& .MuiTooltip-tooltip": {
+                    minWidth: "500px",
+                  },
+                }}
+                title={
+                  <Box>
+                    {endDialogTitle && endDialogHelpText ? (
+                      <Box
+                        sx={{
+                          marginLeft: 2,
+                          marginRight: 2,
+                          paddingTop: 2,
+                          paddingBottom: 2,
+                          marginBottom: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            paddingBottom: 1,
+                            fontSize: "11pt",
+                          }}
+                        >
+                          {endDialogTitle}
+                        </Typography>
+                        <Typography>{endDialogHelpText}</Typography>
+                      </Box>
+                    ) : null}
+                    <DatePickerComponent
+                      startDateTime={endTimeStart}
+                      endDateTime={endTime}
+                      label="End"
+                      handleFrom={onEndFromChange}
+                      handleTo={onEndToChange}
+                      openPicker={setEndOpenDatePicker}
+                      setDisplayName={setToDisplayTime}
+                      maxDate={false}
+                      handleCommonDate={handleCommonEndDate}
+                    />
+                  </Box>
+                }
+              >
+                <Box
+                  component="span"
+                  onClick={toggleEndPicker}
+                  sx={{ display: "inline-flex" }}
+                >
                   <MuiTypography
                     sx={{
                       ...timeTextStyle,
@@ -353,35 +370,35 @@ export const DateControlComponent = ({
                     {toDisplayTime}
                   </MuiTypography>
                 </Box>
+              </CustomisedTooltip>
+            </Box>
 
-                {endTimeStart || endTime ? (
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    disableRipple
-                    sx={{
-                      padding: 0,
-                      height: "fit-content",
-                      minHeight: 0,
-                    }}
-                    onClick={() => {
-                      onEndFromChange("");
-                      onEndToChange("");
-                      setToDisplayTime("Select time range");
-                    }}
-                  >
-                    <CloseOutlinedIcon
-                      color="primary"
-                      sx={{
-                        fontSize: "11pt",
-                      }}
-                    />
-                  </IconButton>
-                ) : null}
-              </Box>
-            </CustomisedTooltip>
-          ) : null}
-        </Box>
+            {endTimeStart || endTime ? (
+              <IconButton
+                size="small"
+                color="primary"
+                disableRipple
+                sx={{
+                  padding: 0,
+                  height: "fit-content",
+                  minHeight: 0,
+                }}
+                onClick={() => {
+                  onEndFromChange("");
+                  onEndToChange("");
+                  setToDisplayTime("Select time range");
+                }}
+              >
+                <CloseOutlinedIcon
+                  color="primary"
+                  sx={{
+                    fontSize: "11pt",
+                  }}
+                />
+              </IconButton>
+            ) : null}
+          </Box>
+        ) : null}
       </Box>
     </Box>
   );

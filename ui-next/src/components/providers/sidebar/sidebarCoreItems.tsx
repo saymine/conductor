@@ -2,9 +2,9 @@
  * Core (OSS) sidebar menu items for Conductor UI.
  *
  * These items are merged with plugin-registered items in UiSidebar.
- * - Executions submenu (Workflow, Scheduler, Queue Monitor)
+ * - Executions submenu (Workflow, Task, Scheduler, Queue Monitor)
  * - Run Workflow button
- * - Definitions submenu (Workflow, Task, Event Handler, Scheduler)
+ * - Definitions submenu (Workflow, Agents, Task, Event Handler, Scheduler, Schemas)
  * - Help menu
  * - API Docs
  */
@@ -12,18 +12,25 @@
 import CodeIcon from "@mui/icons-material/Code";
 import PlayIcon from "@mui/icons-material/PlayArrowOutlined";
 import PlaylistPlayIcon from "@mui/icons-material/PlaylistPlay";
+import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 import SupportIcon from "@mui/icons-material/Support";
 import WebhookOutlinedIcon from "@mui/icons-material/WebhookOutlined";
 import RunWorkflowButton from "components/providers/sidebar/RunWorkflowButton";
 import { MenuItemType } from "components/providers/sidebar/types";
 import { FEATURES, featureFlags } from "utils";
 import {
+  AGENT_DEFINITION_URL,
+  AGENT_EXECUTIONS_URL,
+  AGENT_SECRETS_URL,
   EVENT_HANDLERS_URL,
   NEW_TASK_DEF_URL,
   RUN_WORKFLOW_URL,
   SCHEDULER_DEFINITION_URL,
   SCHEDULER_EXECUTION_URL,
+  SCHEMAS_URL,
+  SKILLS_URL,
   TASK_DEF_URL,
+  TASK_EXECUTION_URL,
   TASK_QUEUE_URL,
   WORKFLOW_DEFINITION_URL,
   WORKFLOW_EXECUTION_URL,
@@ -32,6 +39,9 @@ import {
 const isPlayground = featureFlags.isEnabled(FEATURES.PLAYGROUND);
 const hideFeedbackForm = !featureFlags.isEnabled(FEATURES.SHOW_FEEDBACK_FORM);
 const hideScheduler = !featureFlags.isEnabled(FEATURES.SCHEDULER);
+const hideAgentspan = !featureFlags.isEnabled(
+  FEATURES.CONDUCTOR_INTEGRATIONS_AI_ENABLED,
+);
 
 /**
  * Core sidebar position constants. Root and submenus both use 100, 200, 300, ...
@@ -50,15 +60,18 @@ const CORE_SIDEBAR_POSITIONS = {
   // Executions submenu children
   EXECUTIONS: {
     workflowExeItem: 100,
+    taskExeItem: 150,
     schedulerExeItem: 185,
     queueMonitorItem: 200,
   },
   // Definitions submenu children
   DEFINITIONS: {
     workflowDefItem: 100,
+    agentDefItem: 150,
     taskDefItem: 200,
     eventHandlerDefItem: 300,
     schedulerDefItem: 350,
+    schemas: 375,
   },
   // Help submenu children
   HELP: {
@@ -103,6 +116,16 @@ export function getCoreSidebarItems(open: boolean): MenuItemType[] {
           position: E.workflowExeItem,
         },
         {
+          id: "taskExeItem",
+          title: "Task",
+          icon: null,
+          linkTo: TASK_EXECUTION_URL.LIST,
+          shortcuts: [],
+          hotkeys: "",
+          hidden: false,
+          position: E.taskExeItem,
+        },
+        {
           id: "schedulerExeItem",
           title: "Scheduler",
           icon: null,
@@ -121,6 +144,50 @@ export function getCoreSidebarItems(open: boolean): MenuItemType[] {
           hotkeys: "",
           hidden: false,
           position: E.queueMonitorItem,
+        },
+      ],
+    },
+    // Agents submenu (embedded Conductor-Agents) - hidden unless CONDUCTOR_INTEGRATIONS_AI_ENABLED
+    {
+      id: "agentspanSubMenu",
+      title: "Agents",
+      icon: <SmartToyOutlinedIcon />,
+      linkTo: "",
+      shortcuts: [],
+      hotkeys: "",
+      hidden: hideAgentspan,
+      position: 250,
+      items: [
+        {
+          id: "agentExeItem",
+          title: "Executions",
+          icon: null,
+          linkTo: AGENT_EXECUTIONS_URL.BASE,
+          activeRoutes: [AGENT_EXECUTIONS_URL.ID_TASK_ID],
+          shortcuts: [],
+          hotkeys: "",
+          hidden: hideAgentspan,
+          position: 200,
+        },
+        {
+          id: "agentSkillsItem",
+          title: "Skills",
+          icon: null,
+          linkTo: SKILLS_URL.BASE,
+          shortcuts: [],
+          hotkeys: "",
+          hidden: true,
+          position: 300,
+        },
+        {
+          id: "agentSecretsItem",
+          title: "Secrets",
+          icon: null,
+          linkTo: AGENT_SECRETS_URL,
+          shortcuts: [],
+          hotkeys: "",
+          hidden: hideAgentspan,
+          position: 400,
         },
       ],
     },
@@ -161,6 +228,16 @@ export function getCoreSidebarItems(open: boolean): MenuItemType[] {
           position: D.workflowDefItem,
         },
         {
+          id: "agentDefItem",
+          title: "Agents",
+          icon: null,
+          linkTo: AGENT_DEFINITION_URL.BASE,
+          shortcuts: [],
+          hotkeys: "",
+          hidden: hideAgentspan,
+          position: D.agentDefItem,
+        },
+        {
           id: "taskDefItem",
           title: "Task",
           icon: null,
@@ -195,6 +272,20 @@ export function getCoreSidebarItems(open: boolean): MenuItemType[] {
           hotkeys: "",
           hidden: hideScheduler,
           position: D.schedulerDefItem,
+        },
+        // Sidebar items are merged by id, so a plugin registering its own schema
+        // screen under this id replaces this entry rather than adding a second
+        // "Schemas" item beside it.
+        {
+          id: "schemas",
+          title: "Schemas",
+          icon: null,
+          linkTo: SCHEMAS_URL.BASE,
+          activeRoutes: [SCHEMAS_URL.EDIT],
+          shortcuts: [],
+          hotkeys: "",
+          hidden: false,
+          position: D.schemas,
         },
       ],
     },

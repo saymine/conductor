@@ -16,6 +16,7 @@ import {
   TASK_SEARCH_QUERY_SUGGESTIONS,
   WORKFLOW_SEARCH_QUERY_SUGGESTIONS,
 } from "utils/constants/common";
+import { FEATURES, featureFlags } from "utils";
 import { useLocalStorage } from "utils/localstorage";
 import { DateControlComponent } from "../DateControlComponent";
 import { ExampleSearchQuery } from "../SearchExampleQuery";
@@ -40,8 +41,8 @@ interface AdvanceSearchComponentProps {
   setOpenDateSelect: Dispatch<SetStateAction<boolean>>;
   setToDisplayTime: Dispatch<SetStateAction<string>>;
   openEndDatePicker: boolean;
-  setFreeText: QueryDispatch<SetStateAction<string>>;
-  setQueryText: QueryDispatch<SetStateAction<string>>;
+  setFreeText: (value: string) => void;
+  setQueryText: (value: string) => void;
   setShowCodeDialog: QueryDispatch<SetStateAction<string>>;
   handleReset: () => void;
   doSearch: () => void;
@@ -82,6 +83,9 @@ export const AdvanceSearch = ({
   onEndToChange,
   recentSearches,
 }: AdvanceSearchComponentProps) => {
+  const showTaskReferenceName = featureFlags.isEnabled(
+    FEATURES.SHOW_TASK_REFERENCE_NAME,
+  );
   const disposeRef = useRef<null | (() => void)>(null);
 
   useEffect(() => {
@@ -151,7 +155,10 @@ export const AdvanceSearch = ({
                     ...TASK_SEARCH_QUERY_SUGGESTIONS,
                     ...taskTypes,
                     ...taskStatuses,
-                  ];
+                  ].filter(
+                    (property) =>
+                      showTaskReferenceName || property !== "referenceTaskName",
+                  );
 
                   // Provide suggestions for properties that start with the current text
                   const propertySuggestions = propertyKeys.map((property) => ({
@@ -177,9 +184,24 @@ export const AdvanceSearch = ({
       <Grid
         size={{
           xs: 12,
-          sm: 12,
-          md: 5.5,
+          lg: 6,
         }}
+        sx={{ order: { xs: 0, lg: 2 } }}
+      >
+        <ConductorInput
+          fullWidth
+          label="Free text search"
+          value={freeText}
+          onTextInputChange={setFreeText}
+          showClearButton
+        />
+      </Grid>
+      <Grid
+        size={{
+          xs: 12,
+          lg: 6,
+        }}
+        sx={{ order: { xs: 0, md: 1 } }}
       >
         <DateControlComponent
           startTime={startTime}
@@ -207,57 +229,34 @@ export const AdvanceSearch = ({
         />
       </Grid>
       <Grid
-        size={{
-          xs: 12,
-          sm: 6,
-          md: 3.5,
-          lg: 4,
-        }}
-      >
-        <ConductorInput
-          fullWidth
-          label="Free text search"
-          value={freeText}
-          onTextInputChange={setFreeText}
-          showClearButton
-        />
-      </Grid>
-      <Grid
         display="flex"
         justifyContent="end"
-        size={{
-          xs: 12,
-          sm: 6,
-          md: 3,
-          lg: 2.5,
-        }}
+        alignItems="center"
+        gap={1}
+        size={12}
+        sx={{ flexWrap: "nowrap", order: { xs: 0, md: 3 } }}
       >
-        <Grid alignSelf="center" size={5}>
-          <Button
-            id="reset-task-btn"
-            variant="text"
-            onClick={handleReset}
-            style={{ width: "100%" }}
-            startIcon={<ResetIcon />}
-          >
-            Reset
-          </Button>
-        </Grid>
-        <Grid alignSelf="center">
-          <SplitButton
-            id="search-task-btn"
-            startIcon={<SearchIcon />}
-            options={[
-              {
-                label: "Show as code",
-                onClick: () => setShowCodeDialog("active"),
-              },
-            ]}
-            primaryOnClick={doSearch}
-          >
-            Search
-          </SplitButton>
-        </Grid>
+        <Button
+          id="reset-task-btn"
+          variant="text"
+          onClick={handleReset}
+          startIcon={<ResetIcon />}
+        >
+          Reset
+        </Button>
+        <SplitButton
+          id="search-task-btn"
+          startIcon={<SearchIcon />}
+          options={[
+            {
+              label: "Show as code",
+              onClick: () => setShowCodeDialog("active"),
+            },
+          ]}
+          primaryOnClick={doSearch}
+        >
+          Search
+        </SplitButton>
       </Grid>
     </Grid>
   );

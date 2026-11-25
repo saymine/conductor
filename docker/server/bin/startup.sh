@@ -32,6 +32,12 @@ echo "Property file: $CONFIG_PROP"
 echo $CONFIG_PROP
 export config_file=
 
+# Alpine/musl: preload the glibc-compat shims (gcompat + libunwind, installed in the Dockerfile)
+# so grpc-java's native netty bits don't segfault the JVM at load time. Scoped to the java process
+# here — set after nginx has already started so nginx/busybox stay on native musl.
+# DO NOT REMOVE WHILE WE ARE RUNNING ALPINE! (see Dockerfile for context)
+export LD_PRELOAD=/lib/libgcompat.so.0:/usr/lib/libunwind.so.8
+
 if [ -z "$CONFIG_PROP" ];
   then
     echo "Using default configuration file";
