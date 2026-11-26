@@ -7,7 +7,8 @@
 #   Default:        Builds JAR and UI from source (docker-compose, local dev)
 #
 
-# The builder stages below run on Debian + Temurin 25 (JDK); the runtime stage runs on the Alpine Temurin 25 JRE.
+# The builder stages below run on Debian + Temurin 25 (JDK). The shipped runtime (final stage)
+# runs on the Alpine Temurin 25 JRE pinned to the same 25.0.5+8 release.
 FROM debian:trixie-slim AS java-base
 
 ARG TEMURIN_VERSION=25.0.5.0.0+8-0
@@ -51,6 +52,7 @@ RUN if [ "$PREBUILT" = "true" ]; then \
         --no-daemon --no-parallel; \
     fi
 
+
 # ===========================================================================================================
 # 1. UI builder stage
 # ===========================================================================================================
@@ -77,22 +79,41 @@ RUN if [ "$SKIP_UI" = "true" ]; then \
 # ===========================================================================================================
 # 2. Final stage
 # ===========================================================================================================
-FROM eclipse-temurin:25-jre-alpine
+# Alpine base to shed the OS-level CVEs that debian:stable-slim carried: perl
+# (CVE-2026-13221 / CVE-2026-57432), libssh2 (CVE-2026-58050), and an nginx that debian-slim
+# could not patch past 1.26.3 (CVE-2026-60005). The temurin JRE ships in the base image, so the
+# only package we add is nginx. The healthcheck uses busybox wget (built in) instead of curl,
+# which also removes curl's libcurl/libssh2 chain from the image entirely.
+#
+# Floating 25-jre-alpine tag so each rebuild picks up the latest 25.x JVM patch and Alpine
+# package updates automatically -- the point of this image is to stay current on OS/JVM CVEs.
+# The builder stage pins its JDK for a reproducible bytecode target; the shipped runtime does not
+# need to match that patch level (it only runs the compiled jar), so the two can drift.
+FROM eclipse-temurin:25-jre-alpine AS runtime
 
 LABEL maintainer="Orkes OSS <oss@orkes.io>"
 
+# nginx floor pinned above 1.30.6-r0: that build carried CVE-2026-113425 / -121810 / -123007 /
+# -123633 / -123634 (all mail-proxy or HTTP/2-proxy paths, none of which this image's config uses,
+# so real exposure is nil -- the floor just keeps a rebuild from silently regressing onto it).
+# The 25-jre-alpine base (Alpine 3.24) ships the fixed 1.30.7-r0, so a rebuild picks it up.
+RUN apk add --no-cache "nginx>1.30.6-r0" ca-certificates \
+    && rm -f /etc/nginx/http.d/default.conf \
+    && mkdir -p /run/nginx
+
+# DO NOT REMOVE WHILE WE ARE RUNNING ALPINE!
+# grpc-java (bundled via conductor-grpc-server) is not officially supported on Alpine/musl and
+# recommends a glibc-based image. Its native netty bits can segfault the JVM at load time under
+# musl. gcompat + libunwind provide the glibc-compat shims; startup.sh LD_PRELOADs them around the
+# java invocation only (not nginx/busybox). Without these packages the preload paths would not
+# exist and the dynamic loader would error.
+RUN apk add --no-cache gcompat libunwind
+
+FROM runtime AS final
+
 # envsubst, apache2-utils (htpasswd) and curl serve the startup script and probes mounted by the Helm chart.
-# gcompat + libunwind are LD_PRELOADed by the startup script: grpc-java's native netty code can segfault on musl.
-RUN apk add --no-cache \
-  "nginx>1.30.6-r0" \
-  ca-certificates \
-  envsubst \
-  apache2-utils \
-  curl \
-  gcompat \
-  libunwind \
-  && rm -f /etc/nginx/http.d/default.conf \
-  && mkdir -p /run/nginx /app/config /app/logs /app/libs
+RUN apk add --no-cache envsubst apache2-utils curl \
+    && mkdir -p /app/config /app/logs /app/libs
 
 # Copy the compiled output to new image
 COPY --from=builder /conductor/server/build/libs/*boot*.jar /app/libs/conductor-server.jar
